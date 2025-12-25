@@ -1,0 +1,32 @@
+# ビルド出力
+bin/
+obj/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 環境変数（必要に応じて）
+.env
+.env.local
+.env.*.local
+
+# ログ
+*.log
+
+# パッケージ
+*.nupkg

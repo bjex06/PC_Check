@@ -1,0 +1,166 @@
+<Window x:Class="PcCheck.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PC情報収集ツール"
+        Width="500" Height="520"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Grid>
+        <!-- 初期画面 -->
+        <Border x:Name="InitialPanel" Visibility="Visible" Padding="40">
+            <StackPanel VerticalAlignment="Center">
+                <!-- タイトル -->
+                <TextBlock Text="PC情報収集ツール"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,40"/>
+
+                <!-- 営業所選択 -->
+                <TextBlock Text="営業所を選択してください:"
+                           FontSize="14"
+                           Foreground="{StaticResource SubTextBrush}"
+                           Margin="0,0,0,10"/>
+
+                <ComboBox x:Name="BranchComboBox"
+                          Style="{StaticResource ModernComboBox}"
+                          Margin="0,0,0,30">
+                    <ComboBoxItem Content="大阪本社"/>
+                    <ComboBoxItem Content="佃営業所"/>
+                    <ComboBoxItem Content="百島第一"/>
+                    <ComboBoxItem Content="岸和田物流センター"/>
+                    <ComboBoxItem Content="りんくう物流センター"/>
+                    <ComboBoxItem Content="大阪駅前BC"/>
+                    <ComboBoxItem Content="神戸北営業所"/>
+                    <ComboBoxItem Content="神明支店"/>
+                    <ComboBoxItem Content="神戸物流センター"/>
+                </ComboBox>
+
+                <!-- 送信ボタン -->
+                <Button x:Name="SendButton"
+                        Content="情報取得・送信"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="SendButton_Click"
+                        HorizontalAlignment="Center"/>
+
+                <!-- 注意書き -->
+                <TextBlock Text="※クリックすると自動でPC情報を収集・送信します"
+                           FontSize="12"
+                           Foreground="{StaticResource SubTextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 処理中画面 -->
+        <Border x:Name="ProcessingPanel" Visibility="Collapsed" Padding="30,20,30,20">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="情報を収集しています..."
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,25"/>
+
+                <!-- プログレスバー -->
+                <ProgressBar x:Name="ProgressBar"
+                             Height="24"
+                             Maximum="100"
+                             Value="0"
+                             Margin="0,0,0,15"/>
+
+                <TextBlock x:Name="ProgressText"
+                           Text="0%"
+                           FontSize="16"
+                           FontWeight="Medium"
+                           Foreground="{StaticResource SubTextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,25"/>
+
+                <!-- 進捗詳細 -->
+                <StackPanel x:Name="ProgressDetails" HorizontalAlignment="Center">
+                    <TextBlock x:Name="Step1" Text="○ ハードウェア情報" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                    <TextBlock x:Name="Step2" Text="○ OS情報" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                    <TextBlock x:Name="Step3" Text="○ セキュリティソフト" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                    <TextBlock x:Name="Step4" Text="○ ネットワーク情報" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                    <TextBlock x:Name="Step5" Text="○ ソフトウェア情報" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                    <TextBlock x:Name="Step6" Text="○ サーバーに送信" FontSize="15" Foreground="{StaticResource SubTextBrush}" Margin="0,6"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- 完了画面 -->
+        <Border x:Name="CompletedPanel" Visibility="Collapsed" Padding="40">
+            <StackPanel VerticalAlignment="Center">
+                <!-- 成功アイコン -->
+                <Ellipse Width="80" Height="80" Fill="{StaticResource SuccessBrush}" HorizontalAlignment="Center" Margin="0,0,0,20">
+                </Ellipse>
+                <TextBlock Text="✓"
+                           FontSize="40"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           Margin="0,-90,0,30"/>
+
+                <TextBlock Text="送信完了しました!"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource SuccessBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,30"/>
+
+                <!-- 情報表示 -->
+                <StackPanel HorizontalAlignment="Center" Margin="0,0,0,30">
+                    <TextBlock x:Name="ResultPcName"
+                               Text="PC名: "
+                               FontSize="14"
+                               Foreground="{StaticResource TextBrush}"
+                               Margin="0,5"/>
+                    <TextBlock x:Name="ResultDateTime"
+                               Text="送信日時: "
+                               FontSize="14"
+                               Foreground="{StaticResource TextBrush}"
+                               Margin="0,5"/>
+                </StackPanel>
+
+                <TextBlock Text="このウィンドウを閉じて構いません"
+                           FontSize="14"
+                           Foreground="{StaticResource SubTextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+
+                <Button Content="閉じる"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="CloseButton_Click"
+                        HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- エラー画面 -->
+        <Border x:Name="ErrorPanel" Visibility="Collapsed" Padding="40">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="エラーが発生しました"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="#EF4444"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+
+                <TextBlock x:Name="ErrorMessage"
+                           Text=""
+                           FontSize="14"
+                           Foreground="{StaticResource SubTextBrush}"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,30"/>
+
+                <Button Content="再試行"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="RetryButton_Click"
+                        HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

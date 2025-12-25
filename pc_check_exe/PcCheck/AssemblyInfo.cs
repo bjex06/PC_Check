@@ -1,0 +1,22 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows;
+
+[assembly: AssemblyTitle("PC情報収集ツール")]
+[assembly: AssemblyDescription("PC情報を収集してサーバーに送信するツール")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("PC_Check")]
+[assembly: AssemblyCopyright("Copyright © 2024")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+[assembly: ComVisible(false)]
+
+[assembly: ThemeInfo(
+    ResourceDictionaryLocation.None,
+    ResourceDictionaryLocation.SourceAssembly
+)]
+
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
