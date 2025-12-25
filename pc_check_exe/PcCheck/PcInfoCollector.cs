@@ -344,6 +344,48 @@ namespace PcCheck
                 catch { }
             }
 
+            // インストール済みソフトウェアからセキュリティソフトを検出
+            if (string.IsNullOrEmpty(pcInfo.SecuritySoftware) && pcInfo.InstalledSoftware != null)
+            {
+                try
+                {
+                    // セキュリティソフトのキーワード（名前, 検索キーワード）
+                    var securityKeywords = new[]
+                    {
+                        ("Trend Micro Security Agent", new[] { "Trend Micro", "ウイルスバスター", "Apex One", "Security Agent" }),
+                        ("ESET Endpoint Security", new[] { "ESET" }),
+                        ("Symantec Endpoint Protection", new[] { "Symantec", "Norton" }),
+                        ("McAfee Endpoint Security", new[] { "McAfee" }),
+                        ("Kaspersky", new[] { "Kaspersky" }),
+                        ("Sophos Endpoint", new[] { "Sophos" }),
+                        ("CrowdStrike Falcon", new[] { "CrowdStrike", "Falcon" }),
+                        ("Carbon Black", new[] { "Carbon Black" }),
+                        ("Cylance", new[] { "Cylance" }),
+                        ("SentinelOne", new[] { "SentinelOne" }),
+                        ("Avast", new[] { "Avast" }),
+                        ("AVG", new[] { "AVG " }),
+                        ("Bitdefender", new[] { "Bitdefender" }),
+                        ("F-Secure", new[] { "F-Secure" }),
+                        ("Webroot", new[] { "Webroot" })
+                    };
+
+                    foreach (var (displayName, keywords) in securityKeywords)
+                    {
+                        var found = pcInfo.InstalledSoftware.FirstOrDefault(s =>
+                            keywords.Any(k => s.Name != null && s.Name.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0));
+
+                        if (found != null)
+                        {
+                            pcInfo.SecuritySoftware = found.Name;
+                            pcInfo.SecurityVersion = found.Version;
+                            pcInfo.SecurityStatus = "有効"; // インストールされていれば有効と仮定
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+
             // Windows Defender状態
             try
             {

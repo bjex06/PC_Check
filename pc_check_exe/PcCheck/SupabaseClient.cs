@@ -34,7 +34,7 @@ namespace PcCheck
             string json = JsonConvert.SerializeObject(pcInfo, _jsonSettings);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // UPSERT用のリクエストを作成（pc_name + branch_nameの重複時は更新）
+            // UPSERT用のリクエストを作成（pc_name,branch_nameでの重複時は更新）
             // レスポンスでIDを取得するためにreturn=representationを追加
             var request = new HttpRequestMessage(HttpMethod.Post, $"{SUPABASE_URL}/rest/v1/pc_inventory?on_conflict=pc_name,branch_name&select=id")
             {
