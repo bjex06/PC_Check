@@ -12,6 +12,20 @@ namespace PcCheck
 {
     public class PcInfoCollector
     {
+        /// <summary>
+        /// 文字列からNULLバイトと制御文字を除去し、トリムする
+        /// PostgreSQLはTEXTカラムにNULLバイトを保存できないため必須
+        /// </summary>
+        private static string CleanString(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            // NULLバイト(\0)と他の制御文字を除去
+            var cleaned = new string(value.Where(c => c >= 32 || c == '\t' || c == '\n' || c == '\r').ToArray());
+            return cleaned.Trim();
+        }
+
         public void CollectHardwareInfo(PcInfo pcInfo)
         {
             // 基本情報
@@ -26,7 +40,7 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        pcInfo.CpuName = obj["Name"]?.ToString()?.Trim();
+                        pcInfo.CpuName = CleanString(obj["Name"]?.ToString());
                         pcInfo.CpuCores = Convert.ToInt32(obj["NumberOfCores"] ?? 0);
                         pcInfo.CpuThreads = Convert.ToInt32(obj["NumberOfLogicalProcessors"] ?? 0);
                         pcInfo.CpuMaxClock = $"{obj["MaxClockSpeed"]} MHz";
@@ -87,7 +101,7 @@ namespace PcCheck
                     var gpuNames = new List<string>();
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        string name = obj["Name"]?.ToString();
+                        string name = CleanString(obj["Name"]?.ToString());
                         if (!string.IsNullOrEmpty(name))
                         {
                             gpuNames.Add(name);
@@ -105,7 +119,7 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        pcInfo.Motherboard = $"{obj["Manufacturer"]} {obj["Product"]}";
+                        pcInfo.Motherboard = CleanString($"{obj["Manufacturer"]} {obj["Product"]}");
                         break;
                     }
                 }
@@ -119,8 +133,8 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        pcInfo.BiosVersion = obj["SMBIOSBIOSVersion"]?.ToString();
-                        pcInfo.SerialNumber = obj["SerialNumber"]?.ToString();
+                        pcInfo.BiosVersion = CleanString(obj["SMBIOSBIOSVersion"]?.ToString());
+                        pcInfo.SerialNumber = CleanString(obj["SerialNumber"]?.ToString());
                         break;
                     }
                 }
@@ -134,8 +148,8 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        pcInfo.Manufacturer = obj["Manufacturer"]?.ToString();
-                        pcInfo.Model = obj["Model"]?.ToString();
+                        pcInfo.Manufacturer = CleanString(obj["Manufacturer"]?.ToString());
+                        pcInfo.Model = CleanString(obj["Model"]?.ToString());
                         break;
                     }
                 }
@@ -166,8 +180,8 @@ namespace PcCheck
                     int index = 0;
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        string mediaType = obj["MediaType"]?.ToString() ?? "";
-                        string model = obj["Model"]?.ToString() ?? "";
+                        string mediaType = CleanString(obj["MediaType"]?.ToString()) ?? "";
+                        string model = CleanString(obj["Model"]?.ToString()) ?? "";
 
                         // SSD判定（モデル名やMediaTypeから推測）
                         bool isSsd = model.ToUpper().Contains("SSD") ||
@@ -194,9 +208,9 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        pcInfo.OsName = obj["Caption"]?.ToString();
-                        pcInfo.OsVersion = obj["Version"]?.ToString();
-                        pcInfo.OsBuild = obj["BuildNumber"]?.ToString();
+                        pcInfo.OsName = CleanString(obj["Caption"]?.ToString());
+                        pcInfo.OsVersion = CleanString(obj["Version"]?.ToString());
+                        pcInfo.OsBuild = CleanString(obj["BuildNumber"]?.ToString());
 
                         // インストール日
                         string installDate = obj["InstallDate"]?.ToString();
@@ -223,7 +237,7 @@ namespace PcCheck
             {
                 using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion"))
                 {
-                    pcInfo.OsEdition = key?.GetValue("EditionID")?.ToString();
+                    pcInfo.OsEdition = CleanString(key?.GetValue("EditionID")?.ToString());
                 }
             }
             catch { }
@@ -262,7 +276,7 @@ namespace PcCheck
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        string displayName = obj["displayName"]?.ToString();
+                        string displayName = CleanString(obj["displayName"]?.ToString());
                         if (!string.IsNullOrEmpty(displayName))
                         {
                             pcInfo.SecuritySoftware = displayName;
@@ -301,7 +315,7 @@ namespace PcCheck
                         {
                             foreach (ManagementObject obj in searcher.Get())
                             {
-                                string state = obj["State"]?.ToString();
+                                string state = CleanString(obj["State"]?.ToString());
                                 pcInfo.SecuritySoftware = name;
                                 pcInfo.SecurityStatus = state == "Running" ? "有効" : "無効";
                                 break;
@@ -331,7 +345,7 @@ namespace PcCheck
                             {
                                 foreach (ManagementObject obj in searcher.Get())
                                 {
-                                    string state = obj["State"]?.ToString();
+                                    string state = CleanString(obj["State"]?.ToString());
                                     pcInfo.SecuritySoftware = name;
                                     pcInfo.SecurityStatus = state == "Running" ? "有効" : "無効";
                                     break;
@@ -541,8 +555,8 @@ namespace PcCheck
                     {
                         if (key != null)
                         {
-                            pcInfo.OfficeProduct = key.GetValue("ProductReleaseIds")?.ToString();
-                            pcInfo.OfficeVersion = key.GetValue("VersionToReport")?.ToString();
+                            pcInfo.OfficeProduct = CleanString(key.GetValue("ProductReleaseIds")?.ToString());
+                            pcInfo.OfficeVersion = CleanString(key.GetValue("VersionToReport")?.ToString());
                             break;
                         }
                     }
@@ -571,7 +585,7 @@ namespace PcCheck
                         {
                             using (var subKey = key.OpenSubKey(subKeyName))
                             {
-                                string name = subKey?.GetValue("DisplayName")?.ToString();
+                                string name = CleanString(subKey?.GetValue("DisplayName")?.ToString());
                                 if (string.IsNullOrEmpty(name)) continue;
                                 if (softwareList.Contains(name)) continue;
 
@@ -579,9 +593,9 @@ namespace PcCheck
                                 pcInfo.InstalledSoftware.Add(new SoftwareInfo
                                 {
                                     Name = name,
-                                    Version = subKey.GetValue("DisplayVersion")?.ToString(),
-                                    Publisher = subKey.GetValue("Publisher")?.ToString(),
-                                    InstallDate = subKey.GetValue("InstallDate")?.ToString()
+                                    Version = CleanString(subKey.GetValue("DisplayVersion")?.ToString()),
+                                    Publisher = CleanString(subKey.GetValue("Publisher")?.ToString()),
+                                    InstallDate = CleanString(subKey.GetValue("InstallDate")?.ToString())
                                 });
                             }
                         }
@@ -659,7 +673,7 @@ namespace PcCheck
                 {
                     using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice"))
                     {
-                        string progId = key?.GetValue("ProgId")?.ToString() ?? "";
+                        string progId = CleanString(key?.GetValue("ProgId")?.ToString()) ?? "";
                         foreach (var browser in pcInfo.Browsers)
                         {
                             if (progId.Contains("Chrome") && !progId.Contains("Edge")) browser.IsDefault = browser.Name.Contains("Chrome");
