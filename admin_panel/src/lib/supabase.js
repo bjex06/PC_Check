@@ -28,39 +28,60 @@ export async function fetchBranches() {
   return data
 }
 
-// 管理者パスワード検証
-export async function verifyAdminPassword(password) {
-  // SHA-256でハッシュ化
+// SHA-256ハッシュ生成
+async function hashPassword(password) {
   const encoder = new TextEncoder()
   const data = encoder.encode(password)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
-  const { data: settings, error } = await supabase
-    .from('admin_settings')
-    .select('password_hash')
-    .eq('id', 1)
-    .single()
+// 管理者パスワード検証
+export async function verifyAdminPassword(password) {
+  const hashHex = await hashPassword(password)
 
-  if (error) throw error
-  return settings.password_hash === hashHex
+  // ローカルオーバーライドがあれば優先して検証
+  const override = localStorage.getItem('pc_check_password_override')
+  if (override && override === hashHex) {
+    return true
+  }
+
+  // Supabaseに接続してDB上のハッシュと比較
+  try {
+    const { data: settings, error } = await supabase
+      .from('admin_settings')
+      .select('password_hash')
+      .eq('id', 1)
+      .single()
+
+    if (error) throw error
+    return settings.password_hash === hashHex
+  } catch {
+    // Supabase接続失敗（プロジェクト停止中など）
+    // ローカルオーバーライドが設定済みなら上で処理されている
+    // ここに来る＝オーバーライドなし かつ DB接続不可
+    throw new Error('データベースに接続できません。Supabaseプロジェクトが停止中の可能性があります。')
+  }
 }
 
 // パスワード変更
 export async function changeAdminPassword(newPassword) {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(newPassword)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  const hashHex = await hashPassword(newPassword)
 
   const { error } = await supabase
     .from('admin_settings')
     .update({ password_hash: hashHex })
     .eq('id', 1)
 
-  if (error) throw error
+  if (error) {
+    // DB更新失敗時はローカルオーバーライドを更新
+    localStorage.setItem('pc_check_password_override', hashHex)
+    return
+  }
+
+  // DB更新成功したらローカルオーバーライドをクリア
+  localStorage.removeItem('pc_check_password_override')
 }
 
 // パスワードをデフォルト（admin）にリセット
@@ -68,16 +89,22 @@ export async function resetAdminPassword() {
   // "admin" の SHA-256 ハッシュ
   const defaultHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
-  // まず既存行を削除してから新規挿入（RLSのUPDATE制限を回避）
-  await supabase.from('admin_settings').delete().eq('id', 1)
-
-  const { error } = await supabase
-    .from('admin_settings')
-    .insert({ id: 1, password_hash: defaultHash })
-
-  if (error) {
-    throw new Error(`[${error.code}] ${error.message}${error.details ? ' / ' + error.details : ''}`)
+  // DBリセットを試みる
+  try {
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ password_hash: defaultHash })
+      .eq('id', 1)
+    if (error) throw error
+    // DB更新成功したらローカルオーバーライドをクリア
+    localStorage.removeItem('pc_check_password_override')
+    return
+  } catch {
+    // DB更新失敗 → ローカルオーバーライドで代替
   }
+
+  // ローカルストレージにデフォルトハッシュを保存（ブラウザ側でパスワード検証）
+  localStorage.setItem('pc_check_password_override', defaultHash)
 }
 
 // PC履歴を取得（特定PCの履歴）
