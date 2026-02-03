@@ -68,10 +68,10 @@ export async function resetAdminPassword() {
   // "admin" の SHA-256 ハッシュ
   const defaultHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
+  // upsertで確実に書き込む（行がなくても作成される）
   const { error } = await supabase
     .from('admin_settings')
-    .update({ password_hash: defaultHash })
-    .eq('id', 1)
+    .upsert({ id: 1, password_hash: defaultHash, updated_at: new Date().toISOString() })
 
   if (error) throw error
 }
