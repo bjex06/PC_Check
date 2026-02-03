@@ -39,7 +39,7 @@ export default function Login({ onLogin }) {
       setMessage('パスワードを「admin」にリセットしました')
       setPassword('')
     } catch (err) {
-      setError('リセットに失敗しました。再度お試しください。')
+      setError(`リセットに失敗しました: ${err.message || '不明なエラー'}`)
     } finally {
       setResetting(false)
     }
