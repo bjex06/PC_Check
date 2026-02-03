@@ -23,7 +23,7 @@ export default function Login({ onLogin }) {
         setError('パスワードが正しくありません')
       }
     } catch (err) {
-      setError('認証エラーが発生しました')
+      setError(err.message || '認証エラーが発生しました')
     } finally {
       setLoading(false)
     }
