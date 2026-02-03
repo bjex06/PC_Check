@@ -63,6 +63,19 @@ export async function changeAdminPassword(newPassword) {
   if (error) throw error
 }
 
+// パスワードをデフォルト（admin）にリセット
+export async function resetAdminPassword() {
+  // "admin" の SHA-256 ハッシュ
+  const defaultHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+
+  const { error } = await supabase
+    .from('admin_settings')
+    .update({ password_hash: defaultHash })
+    .eq('id', 1)
+
+  if (error) throw error
+}
+
 // PC履歴を取得（特定PCの履歴）
 export async function fetchPcHistory(pcName, branchName) {
   const { data, error } = await supabase

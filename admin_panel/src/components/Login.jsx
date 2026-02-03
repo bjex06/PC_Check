@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { verifyAdminPassword } from '../lib/supabase'
+import { verifyAdminPassword, resetAdminPassword } from '../lib/supabase'
 
 export default function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
 
     try {
@@ -22,6 +26,22 @@ export default function Login({ onLogin }) {
       setError('認証エラーが発生しました')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setResetting(true)
+    setError('')
+    setMessage('')
+    try {
+      await resetAdminPassword()
+      setShowResetConfirm(false)
+      setMessage('パスワードを「admin」にリセットしました')
+      setPassword('')
+    } catch (err) {
+      setError('リセットに失敗しました。再度お試しください。')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -68,6 +88,12 @@ export default function Login({ onLogin }) {
               </div>
             )}
 
+            {message && (
+              <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-600 text-sm animate-slide-up">
+                {message}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
@@ -87,9 +113,43 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          <p className="text-center text-xs text-slate-400 mt-6">
-            初期パスワード: admin
-          </p>
+          <div className="text-center mt-6">
+            <button
+              type="button"
+              onClick={() => setShowResetConfirm(true)}
+              className="text-xs text-slate-400 hover:text-primary-500 underline transition-colors"
+            >
+              パスワードを忘れた場合
+            </button>
+          </div>
+
+          {/* パスワードリセット確認ダイアログ */}
+          {showResetConfirm && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4 animate-fade-in">
+                <h3 className="text-lg font-bold text-slate-800 mb-2">パスワードリセット</h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  パスワードを初期値（admin）にリセットします。よろしいですか？
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    disabled={resetting}
+                    className="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    disabled={resetting}
+                    className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 text-sm transition-colors"
+                  >
+                    {resetting ? 'リセット中...' : 'リセットする'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
