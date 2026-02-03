@@ -68,41 +68,15 @@ export async function resetAdminPassword() {
   // "admin" の SHA-256 ハッシュ
   const defaultHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
-  // REST APIを直接呼び出して確実にリセットする
-  const response = await fetch(`${supabaseUrl}/rest/v1/admin_settings?id=eq.1`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${supabaseAnonKey}`,
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({ password_hash: defaultHash })
-  })
+  // まず既存行を削除してから新規挿入（RLSのUPDATE制限を回避）
+  await supabase.from('admin_settings').delete().eq('id', 1)
 
-  if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`HTTP ${response.status}: ${body}`)
-  }
+  const { error } = await supabase
+    .from('admin_settings')
+    .insert({ id: 1, password_hash: defaultHash })
 
-  const result = await response.json()
-  if (!result || result.length === 0) {
-    // PATCHで更新できなかった場合、行が存在しないのでPOSTで作成
-    const insertResponse = await fetch(`${supabaseUrl}/rest/v1/admin_settings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseAnonKey,
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-        'Prefer': 'resolution=merge-duplicates,return=representation'
-      },
-      body: JSON.stringify({ id: 1, password_hash: defaultHash })
-    })
-
-    if (!insertResponse.ok) {
-      const body = await insertResponse.text()
-      throw new Error(`INSERT HTTP ${insertResponse.status}: ${body}`)
-    }
+  if (error) {
+    throw new Error(`[${error.code}] ${error.message}${error.details ? ' / ' + error.details : ''}`)
   }
 }
 
